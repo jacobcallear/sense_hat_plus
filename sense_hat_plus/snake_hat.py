@@ -62,6 +62,7 @@ class SnakeHat(SenseHat):
     def add_food(self):
         if self.need_food:
             self.food_coord = self.set_random_pixel(colour=(255, 255, 255))
+            self.need_food = False
 
     def set_random_pixel(self, colour=(255, 255, 255)):
         '''Set random pixel to given colour and return (x, y) coordinates.'''
