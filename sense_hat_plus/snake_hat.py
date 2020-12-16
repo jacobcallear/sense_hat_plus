@@ -1,11 +1,12 @@
 from collections import deque
 from random import randint, sample
+from time import sleep
 
 from sense_hat import SenseHat
 
 
 class GameOver(Exception):
-    '''Raised when snake game is lost.'''
+    '''Raised when snake game is finished.'''
     pass
 
 
@@ -76,3 +77,13 @@ class SnakeHat(SenseHat):
         random_pixel = (randint(0, 7), randint(0, 7))
         self.set_pixel(random_pixel[0], random_pixel[1], colour)
         return random_pixel
+
+    def show_game_over(self):
+        self.clear(255, 255, 255)
+        sleep(2)
+        score = len(self.snake)
+        if score == 64:
+            self.show_message('! ' * 5, back_colour=(75, 0, 0))
+        self.show_message(str(score))
+        sleep(1)
+        self.clear()
