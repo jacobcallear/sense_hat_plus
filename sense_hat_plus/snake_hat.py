@@ -46,10 +46,9 @@ class SnakeHat(SenseHat):
         elif direction == 'right':
             x += 1
         # End game if hit edge of board
-        if 0 > x > 7:
-            raise GameOver(f'Hit edge of board (x={x})')
-        if 0 > y > 7:
-            raise GameOver(f'Hit edge of board (y={y})')
+        for coord in (x, y):
+            if coord < 0 or coord > 7:
+                raise GameOver(f'Hit edge of board (x={x}, y={y})')
         # Advance snake head
         self.snake.append((x, y))
         self.set_pixel(x, y, (255, 0, 0))
