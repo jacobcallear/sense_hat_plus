@@ -26,5 +26,5 @@ class SnakeHat(SenseHat):
         }
         # Light pixels on board
         self.clear()
-        self.set_pixel(random_coord, (255, 0, 0))
-        free_coords.remove(random_coord)
+        self.set_pixel(random_coord[0], random_coord[1], (255, 0, 0))
+        self.free_coords.remove(random_coord)
