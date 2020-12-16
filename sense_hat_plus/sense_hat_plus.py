@@ -54,4 +54,4 @@ class SenseHatPlus(SenseHat):
                 snake_hat.advance(direction)
             except GameOver:
                 snake_hat.show_game_over()
-
+                break
