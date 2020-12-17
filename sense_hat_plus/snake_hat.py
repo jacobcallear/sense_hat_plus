@@ -71,8 +71,8 @@ class SnakeHat(SenseHat):
             raise GameOver('Hit yourself')
         # End game if hit edge of board
         for x_or_y in coord:
-            if x_or_y < 0 or x_or_y > 7:
-                x, y = x_or_y
+            if not 0 <= x_or_y <= 7:
+                x, y = coord
                 raise GameOver(f'Hit edge of board (x={x}, y={y})')
 
     def __add_to_head(self, coord_to_add):
