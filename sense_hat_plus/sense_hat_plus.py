@@ -12,13 +12,6 @@ class SenseHatPlus(SenseHat):
     >>> s = SenseHatPlus()
     '''
 
-    opposite_directions = {
-        'left': 'right',
-        'right': 'left',
-        'up': 'down',
-        'down': 'up'
-    }
-
     def play_snake(self, time_interval=0.5):
         # Start game and clear previous joystick movemetns
         snake_hat = SnakeHat()
@@ -36,22 +29,14 @@ class SenseHatPlus(SenseHat):
         # Move snake when joystick moved
         while True:
             sleep(time_interval)
+            # Get direction
             try:
-                event = snake_hat.stick.get_events()[-1]
+                direction = snake_hat.stick.get_events()[-1].direction
             except IndexError:
                 pass
-            else:
-                # If snake turns directly back into itself, keep going in the
-                # previous direction
-                # i.e. if snake '====>' turns '<-', keep moving '->' instead of
-                # ending game
-                next_direction = event.direction
-                turning_back = next_direction == self.opposite_directions[direction]
-                if not turning_back or len(snake_hat.snake) == 1:
-                    direction = next_direction
             # Move snake
             try:
-                snake_hat.advance(direction)
+                snake_hat.move_snake(direction)
             except GameOver:
                 snake_hat.show_game_over()
                 break

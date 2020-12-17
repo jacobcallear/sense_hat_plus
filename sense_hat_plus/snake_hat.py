@@ -13,11 +13,20 @@ class GameOver(Exception):
 class SnakeHat(SenseHat):
     '''Describes the 8x8 LED grid for a snake game.'''
 
+    opposite_directions = {
+        'left': 'right',
+        'right': 'left',
+        'up': 'down',
+        'down': 'up'
+    }
+
     def __init__(self):
+        '''Connect to SenseHat and create snake with one pixel.'''
         super().__init__()
         # Light pixels
         self.clear()
-        snake_pixel = self.set_random_pixel(colour=(255, 0, 0))
+        snake_pixel = (randint(0, 7), randint(0, 7))
+        self.set_pixel(snake_pixel[0], snake_pixel[1], (255, 0, 0))
         # Describe position of snake on LED grid
         self.snake = deque([snake_pixel])
         self.free_coords = {
@@ -28,10 +37,17 @@ class SnakeHat(SenseHat):
         self.food_on_board = False
         self.food_coord = None
 
-    def advance(self, direction):
-        '''Add pixel to head of snake in given direction.'''
+    def move_snake(self, direction):
+        '''Move snake in given direction and add food pixel.'''
         # Add food if needed
-        self.add_food()
+        self.__add_food()
+        coord_to_add = self.__get_next_coord(direction)
+        self.__check_valid_coord(coord_to_add)
+        self.__add_to_head(coord_to_add)
+        self.__pop_from_tail()
+
+    def __get_next_coord(self, direction):
+        '''Return head of snake shifted one pixel in `direction`.'''
         # Determine new coordinate
         x, y = self.snake[-1]
         if direction == 'up':
@@ -42,48 +58,59 @@ class SnakeHat(SenseHat):
             x -= 1
         elif direction == 'right':
             x += 1
-        # End game if hit body
         coord_to_add = (x, y)
-        if coord_to_add not in self.free_coords:
+        # If try to turn immediately back into themselves, keep previous direction
+        if len(self.snake) != 1 and self.snake[-2] == coord_to_add:
+            return self.__get_next_coord(self.opposite_directions[direction])
+        return coord_to_add
+
+    def __check_valid_coord(self, coord):
+        '''Raise GameOver exception if invalid coordinate.'''
+        # End game if hit body
+        if coord not in self.free_coords:
             raise GameOver('Hit yourself')
         # End game if hit edge of board
-        for coord in coord_to_add:
-            if coord < 0 or coord > 7:
+        for x_or_y in coord:
+            if x_or_y < 0 or x_or_y > 7:
+                x, y = x_or_y
                 raise GameOver(f'Hit edge of board (x={x}, y={y})')
         # End game if snake fills all board
         if len(self.snake) == 64:
             raise GameOver('You won!')
-        # Advance snake head
+
+    def __add_to_head(self, coord_to_add):
+        '''Add given coordinate to snake.'''
         self.snake.append(coord_to_add)
-        self.set_pixel(x, y, (255, 0, 0))
+        self.set_pixel(coord_to_add[0], coord_to_add[1], (255, 0, 0))
         self.free_coords.remove(coord_to_add)
+
+    def __pop_from_tail(self):
+        '''Check if eaten food; if not, remove last pixel from snake.'''
         # Remove snake tail if not eaten food
-        if coord_to_add != self.food_coord:
+        head_coord = self.snake[-1]
+        if head_coord != self.food_coord:
             tail = self.snake.popleft()
             self.set_pixel(tail[0], tail[1], (0, 0, 0))
             self.free_coords.add(tail)
         else:
             self.food_on_board = False
 
-    def add_food(self):
+    def __add_food(self):
+        '''Add food pixel to board if food not already on board.'''
         if not self.food_on_board:
             self.food_coord = sample(self.free_coords, 1)[0]
             x, y = self.food_coord
             self.set_pixel(x, y, (255, 255, 255))
             self.food_on_board = True
 
-    def set_random_pixel(self, colour=(255, 255, 255)):
-        '''Set random pixel to given colour and return (x, y) coordinates.'''
-        random_pixel = (randint(0, 7), randint(0, 7))
-        self.set_pixel(random_pixel[0], random_pixel[1], colour)
-        return random_pixel
-
     def show_game_over(self):
+        '''Show game over text.'''
         self.clear(255, 255, 255)
         sleep(2)
         score = len(self.snake)
         if score == 64:
             self.show_message('! ' * 5, back_colour=(75, 0, 0))
         self.show_message(str(score))
+        print(score)
         sleep(1)
         self.clear()
