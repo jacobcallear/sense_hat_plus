@@ -65,7 +65,7 @@ class SnakeHat(SenseHat):
         return coord_to_add
 
     def __check_valid_coord(self, coord):
-        '''Raise GameOver exception if invalid coordinate.'''
+        '''Raise GameOver exception if snake hit edges or itself.'''
         # End game if hit body
         if coord not in self.free_coords:
             raise GameOver('Hit yourself')
@@ -74,9 +74,6 @@ class SnakeHat(SenseHat):
             if x_or_y < 0 or x_or_y > 7:
                 x, y = x_or_y
                 raise GameOver(f'Hit edge of board (x={x}, y={y})')
-        # End game if snake fills all board
-        if len(self.snake) == 64:
-            raise GameOver('You won!')
 
     def __add_to_head(self, coord_to_add):
         '''Add given coordinate to snake.'''
@@ -98,6 +95,10 @@ class SnakeHat(SenseHat):
     def __add_food(self):
         '''Add food pixel to board if food not already on board.'''
         if not self.food_on_board:
+            # End game if snake fills whole board
+            if self.free_coords == set():
+                raise GameOver('You won!')
+            # Choice random coordinate for food
             self.food_coord = sample(self.free_coords, 1)[0]
             x, y = self.food_coord
             self.set_pixel(x, y, (255, 255, 255))
