@@ -6,11 +6,11 @@ from sense_hat_plus.snake_game import GameOver, SnakeGame
 
 
 class SenseHatPlus(SenseHat):
-    '''Raspberry Pi Sense HAT with extra powers.
+    """Raspberry Pi Sense HAT with extra powers.
 
     Initiate with:
     >>> s = SenseHatPlus()
-    '''
+    """
 
     def __init__(self):
         super().__init__()

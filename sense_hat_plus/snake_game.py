@@ -4,12 +4,13 @@ from random import randint, sample
 
 
 class GameOver(Exception):
-    '''Raised when snake game is finished.'''
+    """Raised when snake game is finished."""
+
     pass
 
 
-class SnakeGame():
-    '''Describes a snake game on an 8x8 coordinate system.
+class SnakeGame:
+    """Describes a snake game on an 8x8 coordinate system.
 
     Attributes:
         snake (collections.deque): List of coordinates that make up the snake
@@ -22,31 +23,27 @@ class SnakeGame():
         is_food_on_board (bool): True if food is on the board (i.e.
             self.food_coordinate is not in self.free_coordinates); otherwise
             False.
-    '''
+    """
 
     _opposite_directions = {
         'left': 'right',
         'right': 'left',
         'up': 'down',
-        'down': 'up'
+        'down': 'up',
     }
 
     def __init__(self):
-        '''Initialises snake game with a one pixel snake at a random
-        coordinate.'''
+        """Initialises snake game with a one pixel snake at a random
+        coordinate."""
         # Describe position of snake on LED grid
         snake_coordinate = (randint(0, 7), randint(0, 7))
         self.snake = deque([snake_coordinate])
-        self.free_coordinates = {
-            (x, y)
-            for x in range(8)
-            for y in range(8)
-        }
+        self.free_coordinates = {(x, y) for x in range(8) for y in range(8)}
         self.food_coordinate = ()
         self.is_food_on_board = False
 
     def move_snake(self, direction):
-        '''Moves snake in given direction.
+        """Moves snake in given direction.
 
         Raises:
             GameOver: If you try to move the snake to a coordinate that is not
@@ -55,7 +52,7 @@ class SnakeGame():
         Figures out coordinate if snake moves one pixel in `direction`. Adds
         this coordinate to `self.snake`, and removes it from
         `self.free_coordinates`.
-        '''
+        """
         next_coordinate = self._get_next_coordinate(direction)
         self._check_valid_coordinate(next_coordinate)
         self.snake.append(next_coordinate)
@@ -63,12 +60,12 @@ class SnakeGame():
         return next_coordinate
 
     def pop_from_tail(self):
-        '''Check if eaten food; if not, remove last pixel from snake.
+        """Check if eaten food; if not, remove last pixel from snake.
 
         If snake has just eaten food, does nothing and returns empty tuple.
         Otherwise, removes last coordinate from snake and returns it, and adds
         this coordinate to `self.free_coordinates`
-        '''
+        """
         # Remove snake tail if not eaten food
         head_coord = self.snake[-1]
         if head_coord != self.food_coordinate:
@@ -79,7 +76,7 @@ class SnakeGame():
         return ()
 
     def add_food(self):
-        '''Chooses random free coordinate to convert to food.
+        """Chooses random free coordinate to convert to food.
 
         Raises:
             GameOver: If there is no space left on the board (i.e. you won the
@@ -87,7 +84,7 @@ class SnakeGame():
 
         Before calling this method, check that `self.is_food_on_board` is
         False.
-        '''
+        """
         # End game if snake fills whole board
         if self.free_coordinates == set():
             raise GameOver('You won!')
@@ -96,10 +93,10 @@ class SnakeGame():
         self.is_food_on_board = True
 
     def _get_next_coordinate(self, direction):
-        '''Return head of snake shifted one pixel in `direction`.
+        """Return head of snake shifted one pixel in `direction`.
 
         Called by `self.move_snake()`
-        '''
+        """
         # Determine new coordinate
         x, y = self.snake[-1]
         if direction == 'up':
@@ -118,10 +115,10 @@ class SnakeGame():
         return next_coordinate
 
     def _check_valid_coordinate(self, coordinate):
-        '''Raise GameOver exception if snake hit edges or itself.
+        """Raise GameOver exception if snake hit edges or itself.
 
         Called by `self.move_snake()`
-        '''
+        """
         # End game if hit body
         if coordinate not in self.free_coordinates:
             raise GameOver('Hit yourself')
