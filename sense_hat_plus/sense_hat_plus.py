@@ -2,7 +2,7 @@ from time import sleep
 
 from sense_hat import SenseHat
 
-from sense_hat_plus.snake_hat import GameOver, SnakeGame
+from sense_hat_plus.snake_game import GameOver, SnakeGame
 
 
 class SenseHatPlus(SenseHat):
