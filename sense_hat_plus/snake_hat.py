@@ -1,8 +1,6 @@
+'''Defines SnakeGame class to use in SenseHatPlus class.'''
 from collections import deque
 from random import randint, sample
-from time import sleep
-
-from sense_hat import SenseHat
 
 
 class GameOver(Exception):
@@ -10,10 +8,23 @@ class GameOver(Exception):
     pass
 
 
-class SnakeHat(SenseHat):
-    '''Describes the 8x8 LED grid for a snake game.'''
+class SnakeGame():
+    '''Describes a snake game on an 8x8 coordinate system.
 
-    opposite_directions = {
+    Attributes:
+        snake (collections.deque): List of coordinates that make up the snake
+            The head of the snake is at index -1. Each coordinate is in the
+            form `(x, y)`, where x and y are integers between 0 and 7
+            (inclusive).
+        free_coordinates (set): Set of empty coordinates (i.e. not part of the
+            snake or food).
+        food_coordinate (tuple[int]): (x, y) coordinate of food item.
+        is_food_on_board (bool): True if food is on the board (i.e.
+            self.food_coordinate is not in self.free_coordinates); otherwise
+            False.
+    '''
+
+    _opposite_directions = {
         'left': 'right',
         'right': 'left',
         'up': 'down',
@@ -21,32 +32,20 @@ class SnakeHat(SenseHat):
     }
 
     def __init__(self):
-        '''Connect to SenseHat and create snake with one pixel.'''
-        super().__init__()
-        # Light pixels
-        self.clear()
-        snake_pixel = (randint(0, 7), randint(0, 7))
-        self.set_pixel(snake_pixel[0], snake_pixel[1], (255, 0, 0))
+        '''Initialises snake game with a one pixel snake at a random
+        coordinate.'''
         # Describe position of snake on LED grid
-        self.snake = deque([snake_pixel])
-        self.free_coords = {
+        snake_coordinate = (randint(0, 7), randint(0, 7))
+        self.snake = deque([snake_coordinate])
+        self.free_coordinates = {
             (x, y)
             for x in range(8)
             for y in range(8)
         }
-        self.food_on_board = False
-        self.food_coord = None
+        self.food_coordinate = ()
+        self.is_food_on_board = False
 
-    def move_snake(self, direction):
-        '''Move snake in given direction and add food pixel.'''
-        # Add food if needed
-        self.__add_food()
-        coord_to_add = self.__get_next_coord(direction)
-        self.__check_valid_coord(coord_to_add)
-        self.__add_to_head(coord_to_add)
-        self.__pop_from_tail()
-
-    def __get_next_coord(self, direction):
+    def _get_next_coordinate(self, direction):
         '''Return head of snake shifted one pixel in `direction`.'''
         # Determine new coordinate
         x, y = self.snake[-1]
@@ -58,60 +57,70 @@ class SnakeHat(SenseHat):
             x -= 1
         elif direction == 'right':
             x += 1
-        coord_to_add = (x, y)
-        # If try to turn immediately back into themselves, keep previous direction
-        if len(self.snake) != 1 and self.snake[-2] == coord_to_add:
-            return self.__get_next_coord(self.opposite_directions[direction])
-        return coord_to_add
+        next_coordinate = (x, y)
+        # Keep previous direction if they try to do an immediate about turn
+        if len(self.snake) != 1 and self.snake[-2] == next_coordinate:
+            opposite_direction = self._opposite_directions[direction]
+            return self._get_next_coordinate(opposite_direction)
+        return next_coordinate
 
-    def __check_valid_coord(self, coord):
+    def _check_valid_coordinate(self, coordinate):
         '''Raise GameOver exception if snake hit edges or itself.'''
         # End game if hit body
-        if coord not in self.free_coords:
+        if coordinate not in self.free_coordinates:
             raise GameOver('Hit yourself')
         # End game if hit edge of board
-        for x_or_y in coord:
+        for x_or_y in coordinate:
             if not 0 <= x_or_y <= 7:
-                x, y = coord
+                x, y = coordinate
                 raise GameOver(f'Hit edge of board (x={x}, y={y})')
 
-    def __add_to_head(self, coord_to_add):
-        '''Add given coordinate to snake.'''
-        self.snake.append(coord_to_add)
-        self.set_pixel(coord_to_add[0], coord_to_add[1], (255, 0, 0))
-        self.free_coords.remove(coord_to_add)
+    def move_snake(self, direction):
+        '''Moves snake in given direction.
 
-    def __pop_from_tail(self):
-        '''Check if eaten food; if not, remove last pixel from snake.'''
+        Raises:
+            GameOver: If you try to move the snake to a coordinate that is not
+                in `self.free_coordinates`.
+
+        Figures out coordinate if snake moves one pixel in `direction`. Adds
+        this coordinate to `self.snake`, and removes it from
+        `self.free_coordinates`.
+        '''
+        next_coordinate = self._get_next_coordinate(direction)
+        self._check_valid_coordinate(next_coordinate)
+        self.snake.append(next_coordinate)
+        self.free_coordinates.remove(next_coordinate)
+        return next_coordinate
+
+    def pop_from_tail(self):
+        '''Check if eaten food; if not, remove last pixel from snake.
+
+        If snake has just eaten food, does nothing and returns empty tuple.
+        Otherwise, removes last coordinate from snake and returns it, and adds
+        this coordinate to `self.free_coordinates`
+        '''
         # Remove snake tail if not eaten food
         head_coord = self.snake[-1]
-        if head_coord != self.food_coord:
+        if head_coord != self.food_coordinate:
             tail = self.snake.popleft()
-            self.set_pixel(tail[0], tail[1], (0, 0, 0))
-            self.free_coords.add(tail)
-        else:
-            self.food_on_board = False
+            self.free_coordinates.add(tail)
+            return tail
+        self.is_food_on_board = False
+        return ()
 
-    def __add_food(self):
-        '''Add food pixel to board if food not already on board.'''
-        if not self.food_on_board:
-            # End game if snake fills whole board
-            if self.free_coords == set():
-                raise GameOver('You won!')
-            # Choice random coordinate for food
-            self.food_coord = sample(self.free_coords, 1)[0]
-            x, y = self.food_coord
-            self.set_pixel(x, y, (255, 255, 255))
-            self.food_on_board = True
+    def add_food(self):
+        '''Chooses random free coordinate to convert to food.
 
-    def show_game_over(self):
-        '''Show game over text.'''
-        self.clear(255, 255, 255)
-        sleep(2)
-        score = len(self.snake)
-        if score == 64:
-            self.show_message('! ' * 5, back_colour=(75, 0, 0))
-        self.show_message(str(score))
-        print(score)
-        sleep(1)
-        self.clear()
+        Raises:
+            GameOver: If there is no space left on the board (i.e. you won the
+                game).
+
+        Before calling this method, check that `self.is_food_on_board` is
+        False.
+        '''
+        # End game if snake fills whole board
+        if self.free_coordinates == set():
+            raise GameOver('You won!')
+        # Choose random coordinate for food
+        self.food_coordinate = sample(self.free_coordinates, 1)[0]
+        self.is_food_on_board = True

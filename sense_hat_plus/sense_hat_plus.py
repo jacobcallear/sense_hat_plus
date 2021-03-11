@@ -2,7 +2,7 @@ from time import sleep
 
 from sense_hat import SenseHat
 
-from sense_hat_plus.snake_hat import GameOver, SnakeHat
+from sense_hat_plus.snake_hat import GameOver, SnakeGame
 
 
 class SenseHatPlus(SenseHat):
@@ -12,31 +12,79 @@ class SenseHatPlus(SenseHat):
     >>> s = SenseHatPlus()
     '''
 
+    def __init__(self):
+        super().__init__()
+        self.snake_game = SnakeGame()
+
     def play_snake(self, time_interval=0.5):
-        # Start game and clear previous joystick movemetns
-        snake_hat = SnakeHat()
-        snake_hat.stick.get_events()
-        # Start game when joystick moved
+        """Play the snake game with the joystick and an LED grid!
+
+        Example:
+        >>> sense_hat = SenseHatPlus()
+        >>> sense_hat.play_snake()
+        """
+        SNAKE_COLOUR = (255, 0, 0)
+        FOOD_COLOUR = (255, 255, 255)
+        BLANK_COLOUR = (0, 0, 0)
+
+        # Set up board
+        self.snake_game = SnakeGame()
+        self.clear()
+        x, y = self.snake_game.snake[0]
+        self.set_pixel(x, y, SNAKE_COLOUR)
+
+        # Wait for player to move joystick
+        self.stick.get_events()  # Clear previous joystick movements
         print('Move joystick to continue')
         while True:
             try:
-                event = snake_hat.stick.get_events()[-1]
+                direction = self.stick.get_events()[-1].direction
+                break
             except IndexError:
                 sleep(time_interval)
-            else:
-                direction = event.direction
-                break
-        # Move snake when joystick moved
+
+        # Start game!
         while True:
+            # Add food pixel
+            if not self.snake_game.is_food_on_board:
+                # If no space to add food, you've won!
+                try:
+                    self.snake_game.add_food()
+                except GameOver:
+                    self.show_snake_game_over()
+                    break
+                x, y = self.snake_game.food_coordinate
+                self.set_pixel(x, y, FOOD_COLOUR)
+
+            # Get direction to move snake
             sleep(time_interval)
-            # Get direction
             try:
-                direction = snake_hat.stick.get_events()[-1].direction
+                direction = self.stick.get_events()[-1].direction
             except IndexError:
                 pass
-            # Move snake
+
+            # Add pixel to snake head IF valid move
             try:
-                snake_hat.move_snake(direction)
+                x, y = self.snake_game.move_snake(direction)
             except GameOver:
-                snake_hat.show_game_over()
+                self.show_snake_game_over()
                 break
+            self.set_pixel(x, y, SNAKE_COLOUR)
+
+            # Remove pixel from snake tail UNLESS it has just eaten food
+            coordinate_to_remove = self.snake_game.pop_from_tail()
+            if coordinate_to_remove:
+                x, y = coordinate_to_remove
+                self.set_pixel(x, y, BLANK_COLOUR)
+
+    def show_snake_game_over(self):
+        '''Show snake game-over text.'''
+        self.clear(255, 255, 255)
+        sleep(2)
+        score = len(self.snake_game.snake)
+        if score == 64:
+            self.show_message('! ' * 5, back_colour=(75, 0, 0))
+        self.show_message(str(score))
+        print(score)
+        sleep(1)
+        self.clear()
