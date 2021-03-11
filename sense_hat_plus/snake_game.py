@@ -45,36 +45,6 @@ class SnakeGame():
         self.food_coordinate = ()
         self.is_food_on_board = False
 
-    def _get_next_coordinate(self, direction):
-        '''Return head of snake shifted one pixel in `direction`.'''
-        # Determine new coordinate
-        x, y = self.snake[-1]
-        if direction == 'up':
-            y -= 1
-        elif direction == 'down':
-            y += 1
-        elif direction == 'left':
-            x -= 1
-        elif direction == 'right':
-            x += 1
-        next_coordinate = (x, y)
-        # Keep previous direction if they try to do an immediate about turn
-        if len(self.snake) != 1 and self.snake[-2] == next_coordinate:
-            opposite_direction = self._opposite_directions[direction]
-            return self._get_next_coordinate(opposite_direction)
-        return next_coordinate
-
-    def _check_valid_coordinate(self, coordinate):
-        '''Raise GameOver exception if snake hit edges or itself.'''
-        # End game if hit body
-        if coordinate not in self.free_coordinates:
-            raise GameOver('Hit yourself')
-        # End game if hit edge of board
-        for x_or_y in coordinate:
-            if not 0 <= x_or_y <= 7:
-                x, y = coordinate
-                raise GameOver(f'Hit edge of board (x={x}, y={y})')
-
     def move_snake(self, direction):
         '''Moves snake in given direction.
 
@@ -124,3 +94,39 @@ class SnakeGame():
         # Choose random coordinate for food
         self.food_coordinate = sample(self.free_coordinates, 1)[0]
         self.is_food_on_board = True
+
+    def _get_next_coordinate(self, direction):
+        '''Return head of snake shifted one pixel in `direction`.
+
+        Called by `self.move_snake()`
+        '''
+        # Determine new coordinate
+        x, y = self.snake[-1]
+        if direction == 'up':
+            y -= 1
+        elif direction == 'down':
+            y += 1
+        elif direction == 'left':
+            x -= 1
+        elif direction == 'right':
+            x += 1
+        next_coordinate = (x, y)
+        # Keep previous direction if they try to do an immediate about turn
+        if len(self.snake) != 1 and self.snake[-2] == next_coordinate:
+            opposite_direction = self._opposite_directions[direction]
+            return self._get_next_coordinate(opposite_direction)
+        return next_coordinate
+
+    def _check_valid_coordinate(self, coordinate):
+        '''Raise GameOver exception if snake hit edges or itself.
+
+        Called by `self.move_snake()`
+        '''
+        # End game if hit body
+        if coordinate not in self.free_coordinates:
+            raise GameOver('Hit yourself')
+        # End game if hit edge of board
+        for x_or_y in coordinate:
+            if not 0 <= x_or_y <= 7:
+                x, y = coordinate
+                raise GameOver(f'Hit edge of board (x={x}, y={y})')
